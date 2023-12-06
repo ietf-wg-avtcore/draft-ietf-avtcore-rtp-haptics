@@ -16,4 +16,4 @@ Alternatively, [IETF conversion tool](https://author-tools.ietf.org/) can be use
 
 ## Contributing
 
-All material in this repository is considered as contributions to the IETF Standards Process and the applicaple policies shall apply. See guidelines for [contributions](https://github.com/7439henry/draft-hsyang-avtcore-rtp-haptics/CONTRIBUTING.md)
+All material in this repository is considered as contributions to the IETF Standards Process and the applicaple policies shall apply. See guidelines for [contributions](https://github.com/7439henry/draft-hsyang-avtcore-rtp-haptics/blob/main/CONTRIBUTING.md)
