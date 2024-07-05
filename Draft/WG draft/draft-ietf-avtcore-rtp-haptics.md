@@ -1,7 +1,7 @@
 ---
 title: "RTP Payload for Haptics"
 abbrev: RTP-Payload-Haptic
-docname: draft-ietf-avtcore-rtp-haptics-00
+docname: draft-ietf-avtcore-rtp-haptics-01
 date: {DATE}
 stream: IETF
 category: std
@@ -118,7 +118,7 @@ Time-dependent effect: a haptic effect that varies over time. For example, tacti
 
 ## Overview of Haptic Coding
 
-The MPEG Haptics Coding standard specifies methods for efficient transmission and rendering of haptic signals, to enable immersive experiences. It supports multiple types of perceptions, including the most common vibrotactile (sense of touch that perceives vibrations) and kinaesthetic perceptions (tactile resistance or force), but also other, less common perceptions, including for example the sense of temperature or texture. It also supports two approaches for encoding haptic signals: a "quantized" approach based on samples of measured data, and a "descriptive" approach where the signal is synthesized using a combination of functions. Both quantized and descriptive data can be encoded in a human-readable exchange format based on JSON (.hjif), or in a binary packetized format for distribution and streaming (.hmpg). This last format is referred to as the MPEG-I Haptic Stream (MIHS) format and is a base for the RTP payload format described in this document.
+The MPEG Haptics Coding standard specifies methods for efficient transmission and rendering of haptic signals, to enable immersive experiences. It supports multiple types of perceptions, including the most common vibrotactile (sense of touch that perceives vibrations) and kinesthetic perceptions (tactile resistance or force), but also other, less common perceptions, including for example the sense of temperature or texture. It also supports two approaches for encoding haptic signals: a "quantized" approach based on samples of measured data, and a "descriptive" approach where the signal is synthesized using a combination of functions. Both quantized and descriptive data can be encoded in a human-readable exchange format based on JSON (.hjif), or in a binary packetized format for distribution and streaming (.hmpg). This last format is referred to as the MPEG-I Haptic Stream (MIHS) format and is a base for the RTP payload format described in this document.
 
 ## MPEG-I Haptic Stream (MIHS) format {#MIHS-format}
 
@@ -192,9 +192,7 @@ L (MIHS Layer, 4 bits): this field is an integer value which indicates the prior
 
 ## Payload Structures
 
-Two different types of RTP packet payload structures are specified. The single unit payload structure contains a single MIHS unit. The fragmented unit payload structure contains a subset of a MIHS unit. The unit type (UT) field of the RTP payload header {{figure-transmission-type}} identifies both the payload structure and, in the case of a single unit structure, also identifies the type of MIHS unit present in the payload.
-
-Editor's Note:  consider if it would be useful to add the ability to aggregate multiple MIHS units in a single RTP payload - for instance, to aggregate multiple MIHS units with different layer values into a single RTP payload .
+Three different types of RTP packet payload structures are specified. A single unit packet contains a single MIHS unit in the payload.  A fragmentation unit contains a subset of a MIHS unit. An aggregation packet contains multiple MIHS units in the payload. The unit type (UT) field of the RTP payload header {{figure-transmission-type}} identifies both the payload structure and, in the case of a single unit structure, also identifies the type of MIHS unit present in the payload.
 
 ~~~~~~~~~~
 Unit     Payload   Name
@@ -205,24 +203,30 @@ Type     Structure
 2        Single    Temporal MIHS Unit
 3        Single    Spatial MIHS Unit
 4        Single    Silent MIHS Unit
-7        Frag      Fragmented Packet
+5        Aggr     Aggregation Packet(STAP)
+6        Aggr     Aggregation Packet(MTAP)
+7        Frag     Fragmentation Unit
 ~~~~~~~~~~
 {: #figure-transmission-type title="Payload structure type for haptic"}
 
-The payload structures are represented in {{figure-transmission-type}}. The single unit payload structure is specified in {{single}}. The fragmented unit payload structure is specified in {{fragmented}}.
+The payload structures are represented in {{figure-transmission-type}}.  The single unit payload structure is specified in {{single}}. The fragmented unit payload structure is specified in {{fragmented}}. The aggregation unit payload structure is specified in {{aggregated}}. 
 
 ~~~~~~~~~~
-                         +-------------------+
-                         |     RTP Header    |
-+-------------------+    +-------------------+
-|     RTP Header    |    | RTP payload Header|
-+-------------------+    |   (UT = Frag)     |
-| RTP payload Header|    +-------------------+
-+-------------------+    |     FU Header     |
-|    RTP payload    |    +-------------------+
-| (Single MIHS unit)|    |    RTP Payload    |
-+-------------------+    +-------------------+
- (a) single unit RTP     (b) fragmented unit RTP
+                                            +-------------------+
+                                            |     RTP Header    |
+                                            +-------------------+
+                                            | RTP payload Header|
+                      +-------------------+ |   (UT = Aggr)     |
+                      |     RTP Header    | +-------------------+
++-------------------+ +-------------------+ |  MIHS unit 1 Size |
+|     RTP Header    | | RTP payload Header| +-------------------+
++-------------------+ |   (UT = Frag)     | |    MIHS Unit 1    |
+| RTP payload Header| +-------------------+ +-------------------+
++-------------------+ |     FU Header     | |  MIHS unit 2 Size |
+|    RTP payload    | +-------------------+ +-------------------+
+| (Single MIHS unit)| |    RTP Payload    | |    ...            |
++-------------------+ +-------------------+ +-------------------+
+(a) single unit      (b)fragmentation unit (c) aggregation packet
 ~~~~~~~~~~
 {: #figure-transmission-style  title="RTP Transmission mode"}
 
@@ -271,7 +275,7 @@ FU headers are used to enable fragmenting a single MIHS unit into multiple RTP p
 
 ~~~~~~~~~~
 +-------------------------------+
-|0  | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+| 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
 +---+---+---+---+---+---+---+---+
 |FUS|FUE|   RSV     |     UT    |
 +---+---+-----------+-----------+
@@ -287,6 +291,62 @@ RSV (Reserved, 3 bits): these bits MUST be set to 0 by the sender and ignored by
 UT (Unit Type, 3 bits): this field indicates the type of the MIHS unit this fragment belongs to, using values defined in {{figure-transmission-type}}.
 
 The use of MIHS unit fragmentation in RTP means that a media receiver can receive some fragments, but not other fragments. The missing fragments will typically not be retransmitted by RTP. This results in partially received MIHS units, which can be either dropped or used by the decoding application, based on implementation.
+
+### Aggregation Packet Payload Structure {#aggregated}
+
+In an aggregation packet, as described in {{figure-aggre-structure}}, the RTP packet contains an RTP header, followed by a payload header, and, for each aggregated MIHS Unit, a MIHS unit size followed by the MIHS unit. The payload header follows the structure described in {{payload-header}}. 
+
+~~~~~~~~~~
+     0                   1                   2                   3
+     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                          RTP Header                           |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |        RTP Payload Header     |       MIHS Unit 1 Size        |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                           MIHS Unit 1                         |
+    |                                                               |
+    :                                                               :
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |        MIHS Unit 2 Size     |                                 |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                                 |
+    |                           MIHS Unit 2                         |
+    |                                                               |
+    |                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                               :...OPTIONAL RTP padding        |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+~~~~~~~~~~
+{: #figure-aggre-structure title="Single-Time Aggregation Packet"}
+
+{{figure-aggre-structure}} shows a Single-Time Aggregation Packet (STAP), which can be used to transmit multiple MIHS units that correspond to the same timestamp. For example, if two frequencies are used for the same content, they can be transmitted at once in a STAP. Multiple spatial units can also be sent together in a STAP, since this type of haptics data is time independent. The value of the UT field of the payload header is 5. 
+
+
+
+~~~~~~~~~~
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                          RTP Header                           |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |        RTP Payload Header     |       MIHS Unit 1 Size        |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                           TS offset           |               |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+               |
+    |                           MIHS Unit 1                         |
+    |                                                               |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |       MIHS Unit 2 Size        |            TS offset          |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |   TS offset   |                                               |
+    |-+-+-+-+-+-+-+-+                                               |
+    |                          MIHS Unit 2                          |
+    |                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                               :...OPTIONAL RTP padding        |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	
+~~~~~~~~~~
+{: #figure-aggremtap-structure title="Multiple-time aggregation packet"}
+
+{{figure-aggremtap-structure}} shows a multi-time aggregation packet. It is used to transmit multiple MIHS units with different timestamps, in one RTP packet. Multi-time aggregation can help reduce the number of packets, in environments where some delay is acceptable. The value of the UT field of the payload header is 6. 
 
 ## MIHS Units Transmission Considerations {#mihs-trans}
 
