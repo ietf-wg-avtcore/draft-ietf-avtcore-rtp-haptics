@@ -1,7 +1,7 @@
 ---
 title: "RTP Payload for Haptics"
 abbrev: RTP-Payload-Haptic
-docname: draft-ietf-avtcore-rtp-haptics-01
+docname: draft-ietf-avtcore-rtp-haptics-02
 date: {DATE}
 stream: IETF
 category: std
@@ -28,13 +28,14 @@ author:
 	
 normative:
   ISO.IEC.23090-31:
-    title: "Text of ISO/IEC FDIS 23090-31 MPEG Haptics Coding"
+    title: "Information technology - Coded representation of immersive media"
     author:
       org: "ISO/IEC"
     date: 2024
     seriesinfo:
       ISO/IEC: 23090-31
-    target: https://isotc.iso.org/livelink/livelink/open/jtc1sc29wg7
+    target: https://www.iso.org/standard/86122.html
+
 
 informative:
 
@@ -203,9 +204,9 @@ Type     Structure
 2        Single    Temporal MIHS Unit
 3        Single    Spatial MIHS Unit
 4        Single    Silent MIHS Unit
-5        Aggr     Aggregation Packet(STAP)
-6        Aggr     Aggregation Packet(MTAP)
-7        Frag     Fragmentation Unit
+5        Aggr      Aggregation Packet(STAP)
+6        Aggr      Aggregation Packet(MTAP)
+7        Frag      Fragmentation Unit
 ~~~~~~~~~~
 {: #figure-transmission-type title="Payload structure type for haptic"}
 
