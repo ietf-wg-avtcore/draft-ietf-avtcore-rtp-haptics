@@ -1,7 +1,7 @@
 ---
 title: "RTP Payload for Haptics"
 abbrev: RTP-Payload-Haptic
-docname: draft-ietf-avtcore-rtp-haptics-02
+docname: draft-ietf-avtcore-rtp-haptics-03
 date: {DATE}
 stream: IETF
 category: std
@@ -53,6 +53,8 @@ informative:
   RFC3551:
   RFC4585:
   RFC8866:
+  RFC5104:
+
   
   I-D.ietf-mediaman-haptics:
 
@@ -355,7 +357,7 @@ The following considerations apply for the streaming of MIHS units over RTP:
 
 The MIHS format enables variable duration units and uses initialization MIHS units to declare the duration of subsequent non-zero duration MIHS units, as well as the variation of this duration. A sender SHOULD set constant or low-variability (e.g., lower than the playout buffer) durations in initialization MIHS units, for RTP streaming. This enables the receiver to determine early (e.g., using a timer) when a unit has been lost and make the decoder more robust to RTP packet loss. If a sender sends MIHS units with high duration variations, the receiver may need to wait for a long period of time (e.g., the upper bound of the duration variation), to determine if a MIHS unit was lost in transmission. Whether this behavior is acceptable or not is application dependent.
 
-The MIHS format uses silent MIHS units to signal haptic silence. A sender MAY decide not to send silent units, to save network resources. Since, from a receiver standpoint, a missed MIHS unit may originate from a not-sent silent unit, or a lost packet, a sender MAY send one, or a few, MIHS silent units at the beginning of a haptic silence. If a media receiver receives a MIHS silent unit, the receiver SHOULD assume that silence is intended until the reception of a non-silent MIHS unit. This can reduce the number of false detection of lost RTP packets by the decoder.
+The MIHS format uses silent MIHS units to signal haptic silence. A sender MAY decide not to send silent units, to save network resources. Since, from a receiver standpoint, a missed MIHS unit may originate from a not-sent silent unit, or a lost packet, a sender MAY send one, or a few, MIHS silent units at the beginning of a haptic silence. If a media receiver receives a MIHS silent unit, the receiver SHOULD assume that silence is intended until the reception of a non-silent MIHS unit. This can reduce the number of false detections of lost RTP packets by the decoder. In some multimedia conference scenarios using an RTP video mixer (e.g., when adding or selecting a new source), it is recommended to use Full Intra Request (FIR) feedback messages with Haptic {{RFC5104}}. The purpose of the FIR message is to force an encoder to send a decoder refresh point at the earliest opportunity. In the context of haptics, an appropriate decoder refresh point is an initialization MIHS unit. The initialization MIHS unit point enables a decoder to be reset to a known state and be able decode all MIHS units following it.  
 
 # Payload Format Parameters  
 
@@ -411,11 +413,11 @@ indicates the minimum frequency of haptic data for vibrotactile perceptions (Hz)
 indicates, using a coma-separated list, the types of actuators. The device type is defined in {{ISO.IEC.23090-31}}: MPEG_haptics.reference_device object.type is a string which may in the initial release of the specifications hold values among "LRA", "VCA", "ERM", "Piezo" or "Unknown".
 
 *hmpg-silencesupp*
-indicates whether silence suppression should be used (1) or not (0). The default value shall be 1.
+indicates whether silence suppression should be used (1) or not (0). The default value shall be 0.
 
 ## SDP Parameter Registration {#sdp-registration}
  
-This memo registers an 'haptics' token in the media sub-registry of the Session Description Protocols (SDP) Parameters registry. This registration contains the required information elements outlined in the SDP registration procedure defined in section 8.2 of {{RFC8866}}.
+This memo registers a 'haptics' token in the media sub-registry of the Session Description Protocols (SDP) Parameters registry. This registration contains the required information elements outlined in the SDP registration procedure defined in section 8.2 of {{RFC8866}}.
  
    (1)  Contact Information:
  
@@ -459,18 +461,22 @@ An example of media representation corresponding to the hmpg RTP payload in SDP 
 
     m=haptics 43291 UDP/TLS/RTP/SAVPF 115
     a=rtpmap:115 hmpg/8000
-    a=fmtp:115 hmpg-profile=1;hmpg-lvl=1;hmpg-ver=2023
+    a=fmtp:115 hmpg-profile=main;hmpg-lvl=1;hmpg-ver=2023
 
 
 ## SDP Offer/Answer Considerations
 
 When using the offer/answer procedure described in {{RFC3264}} to negotiate the use of haptic, the following considerations apply:
 
+When used for a unidirectional stream, the SDP parameters represent the properties of the sender (on the sending side) and of the receiver (on the receiving side). When used for a sendrecv stream, the SDP parameters represent the properties of the receiver. The receiver properties expressed using the SDP parameters 'hmpg-ver', 'hmpg-profile'  and 'hmpg-lvl' have a mandatory character, since they represent implementation capabilities. The properties expressed using the other SDP parameters are provided as recommendations for efficient data transmission and is not binding, meaning that a sender is encouraged but not required to conform to the parameters specified by the receiver.
+Any receiver compliant with {{ISO.IEC.23090-31}} must accept any stream with a compatible version, profile and level. A receiver supporting a more general profile will accept a stream corresponding to a same or less general profile (e.g., "main" is more general than "simple-parametric"). A receiver supporting a given level will accept a stream corresponding to a same or lower level. A receiver supporting a given version will accept a stream corresponding to the same version and may accept other versions. A receiver may ignore any part of a received stream, e.g., that it does not have support for rendering. 
+
+
 The haptic signal can be sampled at different rates. The MPEG Haptics Coding standard does not mandate a specific frequency. A typical sample rate is 8000Hz.
 
 The parameter 'hmpg-ver' indicates the version of the haptic standard specification. If it is not specified, the initial version of the MPEG Haptic Coding specification SHOULD be assumed, although the sender and receiver MAY use a specific value based on an out-of-band agreement. The parameter 'hmpg-profile' is used to restrict the number of tools used (e.g., the simple-parametric profile fits enable simpler implementations than the main profile). If it is not specified, the most general profile "main" SHOULD be assumed, although the sender and receiver MAY use a specific value based on an out-of-band agreement. The parameter 'hmpg-lvl' is used to further characterize implementations within a given profile, e.g., according to the maximum supported number of channels, bands, and perceptions. If it is not specified, the most general level "2" SHOULD be assumed, although the sender and receiver MAY use a specific version based on an out-of-band agreement.
 
-Other parameters can be used to indicate bitstream properties as well as receiver capabilities. The parameters 'hmpg-maxlod', 'hmpg-avtypes', 'hmpg-bodypartmask', 'hmpg-maxfreq', 'hmpg-minfreq', 'hmpg-dvctypes', and 'hmpg-modalities' can be sent by a sender to reflect the characteristics of bitstreams and can be set by a receiver to reflect the nature and capabilities of local actuator devices, or a preferred set of bitstream properties. For example, different receivers may have different sets of local actuators, in which case these parameters can be used to select a stream adapted to the receiver. In some other cases, some receivers may indicate a preference for a set of bitstream properties such as perceptions, min/max frequency, or body-part-mask, which contribute the most to the user experience for a given application, in which case these parameters can be used to select a stream which include and possibly prioritizes those properties.
+Other parameters can be used to indicate bitstream properties as well as receiver capabilities. The parameters 'hmpg-maxlod', 'hmpg-avtypes', 'hmpg-bodypartmask', 'hmpg-maxfreq', 'hmpg-minfreq', 'hmpg-dvctypes', and 'hmpg-modalities' can be sent by a sender to reflect the characteristics of bitstreams and can be set by a receiver to reflect the nature and capabilities of local actuator devices, or a preferred set of bitstream properties. For example, different receivers may have different sets of local actuators, in which case these parameters can be used to select a stream adapted to the receiver. In some other cases, some receivers may indicate a preference for a set of bitstream properties such as perceptions, min/max frequency, or body-part-mask, which contribute the most to the user experience for a given application, in which case these parameters can be used to select a stream which include and possibly prioritizes those properties. For example, if the haptic stream server provides more information than the body mask specified by the receiver, the additional information can be either integrated into a single effect or ignored by the receiver.
 
 The parameter 'hmpg-silencesupp' can be used to indicate sender and receiver capabilities or preferences. This parameter indicates whether silence suppression should be used, as described in {{mihs-trans}}.
 
@@ -502,7 +508,6 @@ However, as "Securing the RTP Framework: Why RTP Does Not Mandate a Single Media
 The haptic codec used with this payload format uses a compression algorithm (see sections 8.2.8.5 and 8.3.3.2 in {{ISO.IEC.23090-31}}). An attacker may inject pathological datagrams into the stream which are complex to decode and cause the receiver to be overloaded, similarly to {{RFC3551}}. 
 
 End-to-end security with authentication, integrity, or confidentiality protection will prevent a Media-Aware Network Element (MANE) from performing media-aware operations other than discarding complete packets. In the case of confidentiality protection, it will even be prevented from discarding packets in a media-aware way. To be allowed to perform such operations, a MANE is required to be a trusted entity that is included in the security context establishment.
-
 
 # IANA Considerations
 
