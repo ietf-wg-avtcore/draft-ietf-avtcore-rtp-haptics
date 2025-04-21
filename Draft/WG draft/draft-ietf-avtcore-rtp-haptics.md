@@ -1,14 +1,14 @@
 ---
 title: "RTP Payload for Haptics"
 abbrev: RTP-Payload-Haptic
-docname: draft-ietf-avtcore-rtp-haptics-04
+docname: draft-ietf-avtcore-rtp-haptics-05
 date: {DATE}
 stream: IETF
 category: std
 ipr: trust200902
 area: Transport
 workgroup: avtcore
-
+updates: 9695
 stand_alone: yes
 pi: [toc, sortrefs, symrefs, docmapping]
 
@@ -54,19 +54,18 @@ informative:
   RFC4585:
   RFC8866:
   RFC5104:
+  RFC9695:
 
   
-  I-D.ietf-mediaman-haptics:
-
 --- abstract
 
-This memo describes an RTP payload format for the MPEG-I haptic data. A haptic media stream is composed of MIHS units including a MIHS(MPEG-I Haptic Stream)  unit header and zero or more MIHS packets. The RTP payload header format allows for packetization of a MIHS unit in an RTP packet payload as well as fragmentation of a MIHS unit into multiple RTP packets.
+This memo describes an RTP payload format for the MPEG-I haptic data. A haptic media stream is composed of MIHS units including a MIHS(MPEG-I Haptic Stream)  unit header and zero or more MIHS packets. The original media type registration for haptics/hmpg, as defined in RFC9695, did not include any required or optional parameters. Therefore, this specification updates RFC 9695 by adding optional parameters to support extended functionality. The RTP payload header format allows for packetization of a MIHS unit in an RTP packet payload as well as fragmentation of a MIHS unit into multiple RTP packets. 
 
 --- middle
 
 # Introduction
 
-Haptics provides users with tactile effects in addition to audio and video, allowing them to experience sensory immersion. Haptic data is mainly transmitted to devices that act as actuators and provides them with information to operate according to the values defined in haptic effects. The IETF is registering haptics as a primary media type akin to audio and video {{I-D.ietf-mediaman-haptics}}.
+Haptics provides users with tactile effects in addition to audio and video, allowing them to experience sensory immersion. Haptic data is mainly transmitted to devices that act as actuators and provides them with information to operate according to the values defined in haptic effects. The IETF is registering haptics as a primary media type akin to audio and video {{RFC9695}}.
 
 The MPEG Haptics Coding standard {{ISO.IEC.23090-31}} defines the data formats, metadata, and codec architecture to encode, decode, synthesize and transmit haptic signals. It defines the "MIHS unit" as a unit of packetization suitable for streaming, and similar in essence to the NAL unit defined in some video specifications. This document describes how haptic data (MIHS units) can be transmitted using the RTP protocol. This document followed recommendations in {{RFC8088}} and {{RFC2736}} for RTP payload format writers.
 
@@ -107,7 +106,7 @@ Perception: haptic perception containing channels of a specific modality.
 
 Signal: representation of the haptics associated with a specific modality to be rendered on a device.
 
-Hmpg format: hmpg is a binary compressed format for haptics data. Information is stored in a binary form and data compression is applied on data at the band level. The haptics/hmpg media subtype is registered in {{I-D.ietf-mediaman-haptics}} and updated by this memo. 
+Hmpg format: hmpg is a binary compressed format for haptics data. Information is stored in a binary form and data compression is applied on data at the band level. The haptics/hmpg media subtype is registered in {{RFC9695}} and updated by this memo. 
 
 Independent unit: a MIHS unit is independent if it can be decoded independently from earlier units. Independent units contain timing information and are also called "sync units" in {{ISO.IEC.23090-31}}. 
 
@@ -125,7 +124,7 @@ The MPEG Haptics Coding standard specifies methods for efficient transmission an
 
 ## MPEG-I Haptic Stream (MIHS) format {#MIHS-format}
 
-MIHS is a stream format used to transport haptic data. Haptic data including haptic effects is packetized according to the MIHS format, and delivered to actuators, which operate according to the provided effects. The MIHS format has two level packetization, MIHS units and MIHS packets.
+MIHS is a stream format used to transport haptic data. Haptic data including haptic effects is packetized according to the MIHS format, and delivered to actuators, which operate according to the provided effects. The MIHS format has two levels of packetization, MIHS units and MIHS packets.
 
 MIHS units are composed of a MIHS unit header and zero or more MIHS packets. Four types of MIHS units are defined. An initialization MIHS unit contains MIHS packets carrying metadata necessary to reset and initialize a haptic decoder, including a timestamp. A temporal MIHS unit contains one or more MIHS packets defining time-dependent effects and providing modalities such as pressure, velocity, and acceleration. The duration of a temporal unit is a positive number. A spatial MIHS unit contains one or more MIHS packets providing time-independent effects, such as vibrotactile texture, stiffness, and friction. The duration of a spatial unit is always zero.
 A silent MIHS unit indicates that there is no effect during a time interval and its duration is a positive number.
@@ -143,9 +142,9 @@ A MIHS unit can be marked as independent or dependent. When a decoder processes 
 ~~~~~~~~~~
 {: #figure-stream title="Example of MIHS stream"}
 
-# Payload format for haptics
+# Payload Format For Haptics
 
-## RTP header Usage
+## RTP Header Usage
 
 The RTP header is defined in {{RFC3550}} and represented in {{figure-rtpheader}}. Some of the header field values are interpreted as follows.
 
@@ -175,7 +174,7 @@ Marker bit (M): 1 bit. The marker bit SHOULD be set to one in the first non-sile
 
 ## Payload Header {#payload-header}
 
-The RTP Payload Header follows the RTP header. {{figure-payloadheader}} describes RTP Payload Header.
+The RTP Payload Header follows the RTP header. {{figure-payloadheader}} describes RTP Payload Header for Haptic.
 
 ~~~~~~~~~~
 +---------------+
@@ -195,7 +194,7 @@ L (MIHS Layer, 4 bits): this field is an integer value which indicates the prior
 
 ## Payload Structures
 
-Three different types of RTP packet payload structures are specified. A single unit packet contains a single MIHS unit in the payload.  A fragmentation unit contains a subset of a MIHS unit. An aggregation packet contains multiple MIHS units in the payload. The unit type (UT) field of the RTP payload header {{figure-transmission-type}} identifies both the payload structure and, in the case of a single unit structure, also identifies the type of MIHS unit present in the payload.
+Three different types of RTP packet payload structures are specified. A single unit packet contains a single MIHS unit in the payload.  A fragmentation unit contains a subset of a MIHS unit. An aggregation packet contains multiple MIHS units in the payload. The unit type (UT) field of the RTP payload header, as shown in  {{figure-transmission-type}}, identifies both the payload structure and, in the case of a single-unit structure, also identifies the type of MIHS unit present in the payload.
 
 ~~~~~~~~~~
 Unit     Payload   Name
@@ -212,7 +211,7 @@ Type     Structure
 ~~~~~~~~~~
 {: #figure-transmission-type title="Payload structure type for haptic"}
 
-The payload structures are represented in {{figure-transmission-type}}.  The single unit payload structure is specified in {{single}}. The fragmented unit payload structure is specified in {{fragmented}}. The aggregation unit payload structure is specified in {{aggregated}}. 
+The payload structures are represented in {{figure-transmission-style}}.  The single unit payload structure is specified in {{single}}. The fragmented unit payload structure is specified in {{fragmented}}. The aggregation unit payload structure is specified in {{aggregated}}. 
 
 ~~~~~~~~~~
                                             +-------------------+
@@ -235,7 +234,7 @@ The payload structures are represented in {{figure-transmission-type}}.  The sin
 
 ### Single Unit Payload Structure {#single}
 
-In a single unit payload structure, as described in {{figure-transmission-style}}, the RTP packet contains the RTP header, followed by the payload header and one single MIHS unit. The payload header follows the structure described in {{payload-header}}. The  payload contains a MIHS unit as defined in {{ISO.IEC.23090-31}}.
+In a single unit payload structure, as described in {{figure-transmission-single}}, the RTP packet contains the RTP header, followed by the payload header and one single MIHS unit. The payload header follows the structure described in {{payload-header}}. The  payload contains a MIHS unit as defined in {{ISO.IEC.23090-31}}.
 
 ~~~~~~~~~~
  0                   1                   2                   3
@@ -243,9 +242,9 @@ In a single unit payload structure, as described in {{figure-transmission-style}
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                          RTP Header                           |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|payload Header |                                               |
+|Payload Header |                                               |
 +---------------+                                               |
-|                        MIHS unit data                         |
+|                        MIHS Unit Data                         |
 |                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                               :...OPTIONAL RTP padding        |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -321,13 +320,13 @@ In an aggregation packet, as described in {{figure-aggre-structure}}, the RTP pa
 ~~~~~~~~~~
 {: #figure-aggre-structure title="Single-Time Aggregation Packet"}
 
-{{figure-aggre-structure}} shows a Single-Time Aggregation Packet (STAP), which can be used to transmit multiple MIHS units that correspond to the same timestamp. For example, if two frequencies are used for the same content, they can be transmitted at once in a STAP. Multiple spatial units can also be sent together in a STAP, since this type of haptics data is time independent. The value of the UT field of the payload header is 5. 
+{{figure-aggre-structure}} shows a Single-Time Aggregation Packet (STAP), which can be used to transmit multiple MIHS units that correspond to the same timestamp. For example, if two frequencies are used for the same content, they can be transmitted at once in a STAP. Multiple spatial units can also be sent together in a STAP, since this type of haptics data is time independent. The default sizes of the MIHS unit length field is 16 bits. The value of the UT field of the payload header is 5. 
 
 
 
 ~~~~~~~~~~
     0                   1                   2                   3
-    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     |                          RTP Header                           |
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -349,15 +348,17 @@ In an aggregation packet, as described in {{figure-aggre-structure}}, the RTP pa
 ~~~~~~~~~~
 {: #figure-aggremtap-structure title="Multiple-time aggregation packet"}
 
-{{figure-aggremtap-structure}} shows a multi-time aggregation packet. It is used to transmit multiple MIHS units with different timestamps, in one RTP packet. Multi-time aggregation can help reduce the number of packets, in environments where some delay is acceptable. The value of the UT field of the payload header is 6. 
+{{figure-aggremtap-structure}} shows a multi-time aggregation packet. It is used to transmit multiple MIHS units with different timestamps, in one RTP packet. Multi-time aggregation can help reduce the number of packets, in environments where some delay is acceptable. The default sizes of the TS offset and the MIHS unit length field are 16 bits each. The value of the UT field of the payload header is 6. 
 
 ## MIHS Units Transmission Considerations {#mihs-trans}
 
 The following considerations apply for the streaming of MIHS units over RTP:
 
-The MIHS format enables variable duration units and uses initialization MIHS units to declare the duration of subsequent non-zero duration MIHS units, as well as the variation of this duration. A sender SHOULD set constant or low-variability (e.g., lower than the playout buffer) durations in initialization MIHS units, for RTP streaming. This enables the receiver to determine early (e.g., using a timer) when a unit has been lost and make the decoder more robust to RTP packet loss. If a sender sends MIHS units with high duration variations, the receiver may need to wait for a long period of time (e.g., the upper bound of the duration variation), to determine if a MIHS unit was lost in transmission. Whether this behavior is acceptable or not is application dependent.
+The MIHS format enables variable duration units and uses initialization MIHS units to declare the duration of subsequent non-zero duration MIHS units, as well as the maximum variation of this duration. A sender SHOULD set constant or low-variability (e.g., lower than the playout buffer) durations in initialization MIHS units, for RTP streaming. This enables the receiver to determine early (e.g., using a timer) when a unit has been lost and make the decoder more robust to RTP packet loss. If a sender sends MIHS units with high duration variations, the receiver may need to wait for a long period of time (e.g., the upper bound of the duration variation), to determine if a MIHS unit was lost in transmission. Whether this behavior is acceptable or not is application dependent.
 
-The MIHS format uses silent MIHS units to signal haptic silence. A sender MAY decide not to send silent units, to save network resources. Since, from a receiver standpoint, a missed MIHS unit may originate from a not-sent silent unit, or a lost packet, a sender MAY send one, or a few, MIHS silent units at the beginning of a haptic silence. If a media receiver receives a MIHS silent unit, the receiver SHOULD assume that silence is intended until the reception of a non-silent MIHS unit. This can reduce the number of false detections of lost RTP packets by the decoder. In some multimedia conference scenarios using an RTP video mixer (e.g., when adding or selecting a new source), it is recommended to use Full Intra Request (FIR) feedback messages with Haptic {{RFC5104}}. The purpose of the FIR message is to cause an encoder to send a decoder refresh point at the earliest opportunity. In the context of haptics, an appropriate decoder refresh point is an initialization MIHS unit. The initialization MIHS unit point enables a decoder to be reset to a known state and be able decode all MIHS units following it.  
+The MIHS format uses silent MIHS units to signal haptic silence. A sender MAY decide not to send silent units, to save network resources. Since, from a receiver standpoint, a missed MIHS unit may originate from a not-sent silent unit, or a lost packet, a sender MAY send one, or a few, MIHS silent units at the beginning of a haptic silence. If a media receiver receives a MIHS silent unit, the receiver SHOULD assume that silence is intended until the reception of a non-silent MIHS unit. This can reduce the number of false detections of lost RTP packets by the decoder. 
+
+In some multimedia conference scenarios using an RTP video mixer (e.g., when adding or selecting a new source), it is recommended to use Full Intra Request (FIR) feedback messages with Haptic {{RFC5104}}. The purpose of the FIR message is to cause an encoder to send a decoder refresh point at the earliest opportunity. In the context of haptics, an appropriate decoder refresh point is an initialization MIHS unit. The initialization MIHS unit point enables a decoder to be reset to a known state and be able decode all MIHS units following it.  
 
 # Payload Format Parameters  
 
@@ -365,7 +366,7 @@ This section describes payload format parameters. {{format-param}} updates the '
 
 ## Media Type Registration Update {#format-param}
 
-This memo updates the 'hmpg' haptic subtype defined in section 4.3.3 of {{I-D.ietf-mediaman-haptics}} for use with the MPEG-I haptics streamable binary coding format described in ISO/IEC DIS 23090-31: Haptics coding {{ISO.IEC.23090-31}}. This memo especially defines optional parameters for this type in {{optional-param}}.  A mapping of the parameters into the Session Description Protocol (SDP) {{RFC8866}} is also provided for applications that use SDP. Equivalent parameters could be defined elsewhere for use with control protocols that do not use SDP.
+This memo updates the 'hmpg' haptic subtype defined in section 4.3.3 of {{RFC9695}} for use with the MPEG-I haptics streamable binary coding format described in ISO/IEC DIS 23090-31: Haptics coding {{ISO.IEC.23090-31}}. This memo especially defines optional parameters for this type in {{optional-param}}.  A mapping of the parameters into the Session Description Protocol (SDP) {{RFC8866}} is also provided for applications that use SDP. Equivalent parameters could be defined elsewhere for use with control protocols that do not use SDP.
 The receiver MUST ignore any parameter unspecified in this memo.
 
 The following entries identify the media type being updated:
@@ -395,7 +396,7 @@ indicates the level used to generate the encoded stream as defined in {{ISO.IEC.
 indicates the maximum level of details to use for the avatar(s). The avatar level of detail (LOD) is defined in {{ISO.IEC.23090-31}}: MPEG_haptics.avatar object.lod is an integer which may in the initial release of the specifications hold 0 or a positive integer.
 
 *hmpg-avtypes* 
-indicates, using a coma-separated list, types of haptic perception represented by the avatar(s). The avatar type is defined in {{ISO.IEC.23090-31}}: MPEG_haptics.avatar object.type is an integer which may in the initial release of the specifications hold values among "Vibration", "Pressure", "Temperature", "Custom".
+indicates, using a coma-separated list, types of haptic perception represented by the avatar(s). The avatar type is defined in {{ISO.IEC.23090-31}}: MPEG_haptics.avatar object.type is a string which may in the initial release of the specifications hold values among "Vibration", "Pressure", "Temperature", "Custom".
 
 *hmpg-modalities*
 indicates, using a coma-separated list, haptic perception modalities (e.g., pressure, acceleration, velocity, position, temperature, etc.). The perception modality is defined in {{ISO.IEC.23090-31}}: MPEG_haptics.perception object.perception_modality is a string which may in the initial release of the specifications hold values among "Pressure", "Acceleration", "Velocity", "Position", "Temperature", "Vibrotactile", "Water", "Wind", "Force", "Electrotactile", "Vibrotactile Texture", "Stiffness", "Friction", "Humidity", "User-defined Temporal", "User-defined Spatial", "Other".
@@ -487,11 +488,11 @@ The parameter 'hmpg-silencesupp' can be used to indicate sender and receiver cap
 
 When haptic content over RTP is offered with SDP in a declarative style, the parameters capable of indicating both bitstream properties as well as receiver capabilities are used to indicate only bitstream properties.  For example, in this case, the parameters hmpg-maxlod, hmpg-bodypartmask, hmpg-maxfreq, hmpg-minfreq, hmpg-dvctypes, and hmpg-modalities declare the values used by the bitstream, not the capabilities for receiving bitstreams. A receiver of the SDP is required to support all parameters and values of the parameters provided; otherwise, the receiver MUST reject or not participate in the session.  It falls on the creator of the session to use values that are expected to be supported by the receiving application.
 
-# Congestion control consideration
+# Congestion Control Considerations
 
 The general congestion control considerations for transporting RTP data apply to HMPG haptics over RTP as well {{RFC3550}}. 
 
-It is possible to adapt network bandwidth by adjusting either the encoder bit rate or by adjusting the stream content (e.g., level of detail, body parts, actuator frequency range, target device types, modalities).
+It is possible to adapt network bandwidth usage by adjusting either the encoder bit rate or by adjusting the stream content (e.g., level of detail, body parts, actuator frequency range, target device types, modalities).
  
 In case of congestion, a receiver or intermediate node MAY prioritize independent packets over dependent ones, since the non reception of an independent MIHS unit can prevent the decoding of multiple subsequent dependent MIHS units. In case of congestion, a receiver or intermediate node MAY prioritize initialization MIHS units over other units, since initialization MIHS units contain metadata used to re-initialize the decoder, and MAY drop silent MIHS units before other types of MIHS units, since a receiver may interpret a missing MIHS unit as a silence. It is also possible, using the layer field of the RTP payload header, to allocate MIHS units to different layers based on their content, to prioritize haptic data contributing the most to the user experience. In case of congestion, intermediate nodes and receivers SHOULD use the MIHS layer value to determine the relative importance of haptic RTP packets.
 
@@ -512,8 +513,9 @@ End-to-end security with authentication, integrity, or confidentiality protectio
 
 # IANA Considerations
 
-This memo updates the media type registration of haptics/hmpg with IANA, in {{format-param}}. 
+The original media type registration for haptics/hmpg, as specified in {{RFC9695}}, did not define any required or optional parameters.
+This document introduces optional parameters to enable extended functionality while maintaining backward compatibility.
 
 # Acknowledgments
 
-Thanks to Jonathan Lennox for comments about this draft.
+Thanks to Jonathan Lennox and Stephan Wenger for comments about this draft.
